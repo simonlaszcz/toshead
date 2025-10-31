@@ -1,0 +1,4 @@
+*.o
+toshead
+toshead.ttp
+tmp/
