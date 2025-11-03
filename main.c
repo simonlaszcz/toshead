@@ -1,3 +1,5 @@
+/* vim: set ts=4 sw=4 expandtab */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
@@ -34,7 +36,7 @@ int main(int argc, char *argv[])
         goto abend;
 
     if (w != BRANCH) {
-        printf("invalid start branch. expected 0x%04x, got 0x%04x\r\n", BRANCH, w);
+        printf("e: invalid start branch. got 0x%04x\r\n", w);
         goto abend;
     }
 
@@ -93,23 +95,29 @@ int main(int argc, char *argv[])
     if (w == 0) {
         if (fseek(fin, tseg + dseg + sseg, SEEK_CUR) != 0)
             goto abend;
+
         if (!read_long(fin, &l))
             goto abend;
         plhex("first offset", l);
+        if (l & 1)
+            printf("w: first offset is not even\r\n");
 
-        long noffsets = 0;
+        long noffsets = 1;
         long sz = 4;
+        int offset = fgetc(fin);
 
-        if (l > 0) {
-            noffsets = 1;
-            int offset = 0;
-
-            while ((offset = fgetc(fin)) != EOF) {
-                ++sz;
-                if (offset > 1)
-                    ++noffsets;
+        while (!(offset == EOF || offset == 0)) {
+            ++sz;
+            if (offset > 1) {
+                ++noffsets;
+                if (offset & 1)
+                    printf("w: odd offset %d @ %ld\r\n", offset, sz);
             }
+            offset = fgetc(fin);
         }
+
+        if (offset == 0)
+            ++sz;
 
         plong("count", noffsets);
         plong("segment size", sz);
